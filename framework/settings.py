@@ -98,9 +98,9 @@ else:
 
 # Static & Media Files Settings
 if env.bool('USE_S3', default=False):
-    AWS_ACCESS_KEY_ID = env.str('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = env.str('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = env.str('AWS_STORAGE_BUCKET_NAME')
+    AWS_ACCESS_KEY_ID = env.str('S3_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = env.str('S3_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = env.str('S3_STORAGE_BUCKET_NAME')
     AWS_DEFAULT_ACL = None
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
