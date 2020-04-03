@@ -38,7 +38,9 @@ class List(models.Model):
         blank=True
     )
     # m2m relation to tags associated with this list
-    hashTags = models.ManyToManyField(Tag, blank=True)
+    hashTags = models.ManyToManyField(Tag, blank=True, db_table='list_tag')
+    # m2m relations to items belonging to this list, referenced through the position table
+    items = models.ManyToManyField('Item', through='Position', related_name='item_lists')
 
     # boolean, true when the listing is active, set to false when listing is taken down, user acc. deactivated etc.
     isActive = models.BooleanField(default=True)
@@ -88,6 +90,7 @@ class List(models.Model):
     )
 
     class Meta:
+        db_table = 'list'
         verbose_name_plural = "Lists"
         verbose_name = "List"
 
@@ -114,6 +117,7 @@ class Collaborator(models.Model):
 
     class Meta:
         unique_together = [['list', 'user']]
+        db_table = 'list_collaborator'
         verbose_name_plural = "Collaborators"
         verbose_name = "Collaborator"
 
@@ -133,13 +137,14 @@ class Item(models.Model):
         unique=True,
         verbose_name='Key'
     )
-
+    # @todo creator of item through seperate table mayb
     # foreign key to the list the item belongs to
     list = models.ForeignKey(
         List,
         on_delete=models.CASCADE,  # items belonging to a list are deleted if the list itself is deleted
         verbose_name='List'
     )
+
     # foreign key to the item from which this item was derived from
     source = models.ForeignKey(
         'self',
@@ -149,9 +154,9 @@ class Item(models.Model):
         verbose_name='Source Item'
     )
     # m2m relation to tags associated with this item
-    hashTags = models.ManyToManyField(Tag, blank=True)
+    hashTags = models.ManyToManyField(Tag, db_table='item_tag', blank=True)
     # m2m relation to users mentioned in this item
-    mentions = models.ManyToManyField(User, blank=True)
+    mentions = models.ManyToManyField(User, db_table='item_mention', blank=True)
 
     # varchar(127), name of the listed item
     name = models.CharField(max_length=127, verbose_name='Name')
@@ -161,6 +166,7 @@ class Item(models.Model):
     url = models.CharField(max_length=255, default='', blank=True, verbose_name='URL')
 
     class Meta:
+        db_table = 'item'
         verbose_name_plural = "Items"
         verbose_name = "Item"
 
@@ -178,6 +184,8 @@ class Position(models.Model):
     position = models.PositiveSmallIntegerField()
 
     class Meta:
+        unique_together = [['list', 'position']]
+        db_table = 'item_position'
         verbose_name_plural = "List-Item Positions"
         verbose_name = "List-Item Position"
 
@@ -200,6 +208,7 @@ class Vote(models.Model):
 
     class Meta:
         unique_together = [['item', 'voter']]
+        db_table = 'item_vote'
         verbose_name_plural = "Item-User Vote"
         verbose_name = "Item-User Vote"
 
@@ -222,6 +231,7 @@ class Rating(models.Model):
 
     class Meta:
         unique_together = [['item', 'reviewer']]
+        db_table = 'item_rating'
         verbose_name_plural = "Item-User Ratings"
         verbose_name = "Item-User Rating"
 
@@ -237,7 +247,9 @@ class ItemMedia(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
 
     class Meta:
+        # implies an item cannot have more than media linked at any given time.
         unique_together = [['media', 'item']]
+        db_table = 'item_media'
         verbose_name_plural = "Item Media"
         verbose_name = "Item Media"
 

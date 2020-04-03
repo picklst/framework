@@ -10,6 +10,7 @@ class Topic(models.Model):
     namePlural = models.CharField(max_length=63, verbose_name='Name (Plural)')
 
     class Meta:
+        db_table = 'topic'
         verbose_name_plural = "Topics"
         verbose_name = "Topic"
 
@@ -22,11 +23,12 @@ class Tag(models.Model):
     # always kept secret
     id = models.BigAutoField(primary_key=True)
     # varchar(63), uniquely identified field for a tag
-    name = models.SlugField(max_length=63, unique=True, verbose_name='Slug')
+    name = models.SlugField(max_length=63, unique=True, verbose_name='Tag Name')
 
     class Meta:
-        verbose_name_plural = "HashTags"
-        verbose_name = "HashTag"
+        db_table = 'tag'
+        verbose_name_plural = "Tags"
+        verbose_name = "Tag"
 
     def __str__(self):
         return str(self.name)

@@ -15,7 +15,10 @@ SECRET_KEY = env.str('SECRET_KEY', default='@v(sr0a1eocvp9x=pndj(ff*ll_d2yn7e&t1
 # Sets whether debug mode is activated. If true, errors logs are publicly visible instead of error pages
 DEBUG = env.bool('DEBUG', default=True)
 # Lists the hosts where the app is allowed to run. Set to '*' (any) on default
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+# ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+ALLOWED_HOSTS = ['*']
+
+FORCE_SCRIPT_NAME = '/api'
 
 # Application definition
 INSTALLED_APPS = [
@@ -75,7 +78,6 @@ WSGI_APPLICATION = 'framework.wsgi.application'
 #
 # whether to use postgres db, as set in environment
 if env.bool('USE_PGDB', default=False):
-    print(env.str('POSTGRES_HOST'))
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -128,7 +130,6 @@ STATICFILES_DIRS = (os.path.join('static'),)
 # Maximum allowed upload size  for any file
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 25
 
-
 #
 # Authentication
 #
@@ -156,7 +157,6 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-
 
 #
 # GraphQL Settings

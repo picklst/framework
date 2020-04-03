@@ -2,6 +2,7 @@ import graphene
 import graphql_jwt
 from user.api.user.objects import UserObj
 from user.schema import Query as UserQueries, Mutation as UserMutations
+from list.schema import Query as ListQueries, Mutation as ListMutations
 
 
 class ObtainJSONWebToken(graphql_jwt.relay.JSONWebTokenMutation):
@@ -13,6 +14,7 @@ class ObtainJSONWebToken(graphql_jwt.relay.JSONWebTokenMutation):
 
 
 class Mutation(
+    ListMutations,
     UserMutations,
     graphene.ObjectType
 ):
