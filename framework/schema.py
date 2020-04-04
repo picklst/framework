@@ -25,6 +25,7 @@ class Mutation(
 
 class Query(
     UserQueries,
+    ListQueries,
     graphene.ObjectType
 ):
     version = graphene.Boolean()

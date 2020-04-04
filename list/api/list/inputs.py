@@ -7,19 +7,19 @@ class ListSelectInput(graphene.InputObjectType):
 
 
 class ListPropertiesInput(graphene.InputObjectType):
-    isActive = graphene.Boolean()
     isPrivate = graphene.Boolean()
     isRanked = graphene.Boolean()
     forceCuratorRanking = graphene.Boolean()
     isVotable = graphene.Boolean()
-    privateVoting = graphene.Boolean()
+    areVotesPrivate = graphene.Boolean()
+    canVoteMultipleItems = graphene.Boolean()
     isRateable = graphene.Boolean()
-    privateRating = graphene.Boolean()
-    enablePublicSuggestion = graphene.Boolean()
+    areRatingsPrivate = graphene.Boolean()
+    acceptEntries = graphene.Boolean()
 
 
 class ListInput(graphene.InputObjectType):
-    from taxonomy.api.tag.mutation import TagInput
+    from taxonomy.api.tag.inputs import TagInput
     from list.api.item.inputs import ItemInput
 
     name = graphene.String(required=True)

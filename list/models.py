@@ -46,26 +46,31 @@ class List(models.Model):
     isActive = models.BooleanField(default=True)
     # boolean, if set to true, only the curator and collaborators (if any) of this list will be able to view it
     isPrivate = models.BooleanField(default=False)
+
     # boolean, if set to true the items in this list will be displayed rank-wise
     isRanked = models.BooleanField(default=False)
     # boolean, if set to true, the items in this list will be always ranked as the curator had set,
     # on default, the rank of an items shall change based on votes>rating>curator algorithm.
     forceCuratorRanking = models.BooleanField(default=False)
+
     # boolean, whether the list is votable, i.e an item in this list can be voted for.
     isVotable = models.BooleanField(default=False)
     # boolean, whether the voting should be private.
     # if set to true, voter's choice is invisible for the curator / collaborator, and the public
     # however, the curator / public may still maybe able to view who all voted
-    privateVoting = models.BooleanField(default=False)
+    areVotesPrivate = models.BooleanField(default=False)
+    # boolean, whether multiple items from the list can be voted upon.
+    canVoteMultipleItems = models.BooleanField(default=False)
+
     # boolean, whether the list items are ratable, i.e if user can rate different items in this list
     isRateable = models.BooleanField(default=False)
     # boolean, whether the rating should be private.
     # if set to true, rater's rating is invisible for the curator / collaborator, and the public
     # however, the curator / public may still maybe able to view who all rated
-    privateRating = models.BooleanField(default=False)
-    # boolean, whether the public can suggest items to this list
-    # only applicable, if `isPrivate` is set to false.
-    enablePublicSuggestion = models.BooleanField(default=False)
+    areRatingsPrivate = models.BooleanField(default=False)
+
+    # boolean, whether others can suggest items to this list
+    acceptEntries = models.BooleanField(default=False)
 
     # name of the list, supports upto 255 chars
     name = models.CharField(

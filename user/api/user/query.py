@@ -1,23 +1,23 @@
 import graphene
 
+from framework.utils.graphql import APIException
+from user.api.user.objects import UserObj, UserPublicObj
 from user.models import User
 
 
-class UserSuggestions(graphene.ObjectType):
-    username = graphene.String()
-    name = graphene.String()
-    avatar = graphene.String()
-
-    def resolve_username(self, info):
-        return self['username']
-
-    def resolve_name(self, info):
-        return self['first_name'] + ' ' + self['last_name']
-
-
 class Query(graphene.ObjectType):
+    getUser = graphene.Field(UserObj, username=graphene.String(required=True))
     isUsernameAvailable = graphene.Boolean(username=graphene.String(required=True))
-    searchUser = graphene.List(UserSuggestions, key=graphene.String(required=True))
+    searchUser = graphene.List(UserPublicObj, key=graphene.String(required=True))
+
+    def resolve_getUser(self, info, **kwargs):
+        username = kwargs.get('username')
+        try:
+            user = User.objects.get(username=username)
+            # @todo check if user is active
+            return user
+        except User.DoesNotExist:
+            raise APIException("The user queried does not exit", code='LIST_NOT_FOUND')
 
     def resolve_isUsernameAvailable(self, info, **kwargs):
         username = kwargs.get('username')
@@ -29,12 +29,5 @@ class Query(graphene.ObjectType):
 
     def resolve_searchUser(self, info, **kwargs):
         key = kwargs.get('key')
-        results = User.objects.filter(
-            username__startswith=key
-        ).values(
-            'username',
-            'first_name',
-            'last_name',
-            'avatar'
-        )
+        results = User.objects.filter(username__startswith=key)
         return results

@@ -69,18 +69,19 @@ def submission_delete(sender, instance, **kwargs):
     instance.avatar.delete(save=False)
 
 
-class FollowRelation(models.Model):
+class UserSubscription(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='User', related_name='user')
-    follower = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Follower', related_name='follower')
+    subscriber = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Subscriber', related_name='follower')
     createdTimestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [['user', 'follower']]
-        verbose_name = "Follow Relationship"
-        verbose_name_plural = "Follow Relationships"
+        db_table = 'user_subscription'
+        unique_together = [['user', 'subscriber']]
+        verbose_name = "User Subscription"
+        verbose_name_plural = "User Subscriptions"
 
 
 __all__ = [
     'User',
-    'FollowRelation'
+    'UserSubscription'
 ]
