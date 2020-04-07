@@ -186,7 +186,8 @@ class Position(models.Model):
     # could have been accessed through item.list, but to avoid join and easy querying
     list = models.ForeignKey(List, on_delete=models.CASCADE)
     # integer storing position of the item
-    position = models.PositiveSmallIntegerField()
+    # null maybe used when swapping etc.
+    position = models.PositiveSmallIntegerField(null=True)
 
     class Meta:
         unique_together = [['list', 'position']]

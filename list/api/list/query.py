@@ -30,7 +30,7 @@ class Query(graphene.ObjectType):
                         UserSubscription.objects.get(user=listObj.curator, subscriber=user)
                         return listObj
                     except UserSubscription.DoesNotExist:
-                        raise APIException("The list is private. Login required to view the list", code='NO_SUBSCRIPTION')
+                        raise APIException("The list is private, you need to subscription required to view this list", code='NO_SUBSCRIPTION')
             else:
                 # @todo find reason and return exact reason for being inactive
                 raise APIException("The list has been taken down or removed.", code='LIST_INACTIVE')

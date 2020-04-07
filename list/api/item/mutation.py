@@ -2,7 +2,7 @@ import graphene
 from django.db.models import Q
 from graphql_jwt.decorators import login_required
 
-from list.utils.create_item import create_item
+from list.utils.mutations.item import create_item
 from list.models import List
 
 from list.api.item.objects import ItemObj

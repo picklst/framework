@@ -1,9 +1,9 @@
 import graphene
 from graphql_jwt.decorators import login_required
 
-from list.utils.create_list import create_list
 from list.api.list.inputs import ListInput
 from list.api.list.objects import ListObj
+from list.utils.mutations.list import create_list, update_list
 
 
 class CreateListObject(graphene.ObjectType):
@@ -29,5 +29,22 @@ class CreateList(graphene.Mutation):
         return objs
 
 
+class UpdateList(graphene.Mutation):
+    class Arguments:
+        objects = graphene.List(ListInput)
+
+    Output = CreateListObject
+
+    @login_required
+    def mutate(self, info, objects):
+        objs = []
+        for o in objects:
+            o.user = info.context.user
+            obj = update_list(o)
+            objs.append(obj)
+        return objs
+
+
 class Mutation(object):
     createList = CreateList.Field()
+    updateList = UpdateList.Field()

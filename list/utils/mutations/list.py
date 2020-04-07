@@ -1,7 +1,8 @@
 import uuid
+
 from django.template.defaultfilters import slugify
 
-from list.utils.create_item import create_item
+from list.utils.mutations.item import create_item, update_item, delete_item
 from list.models import List
 from user.models import User
 
@@ -14,6 +15,7 @@ def create_list(o):
         # check if the slug already exits, append an uuid if exists to make it unique
         while List.objects.filter(slug=slug).exists():
             slug = slug + '-' + uuid.uuid4().hex[:8]
+
         listObj = List(
             name=o.name,
             slug=slug,
@@ -38,4 +40,28 @@ def create_list(o):
     raise Exception(AttributeError, "Valid user obj must be provided to create list.")
 
 
+def update_list(o):
+    listObj = List.objects.get(slug=o.slug)
 
+    listObj.name = o.name
+    listObj.description = o.description
+
+    if o.properties:
+        for p in o.properties.items():
+            setattr(listObj, p[0], p[1])
+
+    if o.items:
+        updated_items = []
+        for i in o.items:
+            i.list = listObj
+            if listObj.items.filter(key=i.key).exists():
+                update_item(i)
+                updated_items.append(i.key)
+            else:
+                create_item(i)
+                updated_items.append(i.key)
+        for i in listObj.items.exclude(key__in=updated_items):
+            i.list = listObj
+            delete_item(i)
+    listObj.save()
+    return listObj

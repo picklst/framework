@@ -1,14 +1,14 @@
 import graphene
 
 from framework.utils.graphql import APIException
-from user.api.user.objects import UserObj, UserPublicObj
+from user.api.user.objects import UserObj
 from user.models import User
 
 
 class Query(graphene.ObjectType):
     getUser = graphene.Field(UserObj, username=graphene.String(required=True))
     isUsernameAvailable = graphene.Boolean(username=graphene.String(required=True))
-    searchUser = graphene.List(UserPublicObj, key=graphene.String(required=True))
+    searchUser = graphene.List(UserObj, key=graphene.String(required=True))
 
     def resolve_getUser(self, info, **kwargs):
         username = kwargs.get('username')
