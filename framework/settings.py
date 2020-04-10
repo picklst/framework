@@ -106,6 +106,8 @@ if env.bool('USE_S3', default=False):
     AWS_DEFAULT_ACL = None
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    AWS_S3_REGION_NAME = 'ap-south-1'
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
 
     # Static Files
     STATIC_LOCATION = 'static'
@@ -175,4 +177,26 @@ GRAPHQL_JWT = {
     'JWT_LONG_RUNNING_REFRESH_TOKEN': True,
     'JWT_EXPIRATION_DELTA': timedelta(days=7),
     'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=7),
+}
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+    },
 }

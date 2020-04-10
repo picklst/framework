@@ -6,25 +6,26 @@ class ItemObj(graphene.ObjectType):
     key = graphene.String()
     comment = graphene.String()
     url = graphene.String()
-    position = graphene.Int()
-
-    def resolve_position(self, info):
-        from list.models import Position
-        return Position.objects.get(item=self).position
+    nextItem = graphene.Field(lambda: ItemObj)
 
 
 class PositionResolvedItemObj(ItemObj):
+    position = graphene.Int()
+
     def resolve_name(self, info):
-        return self.item.name
+        return self['item'].name
 
     def resolve_key(self, info):
-        return self.item.key
+        return self['item'].key
 
     def resolve_comment(self, info):
-        return self.item.comment
+        return self['item'].comment
 
     def resolve_url(self, info):
-        return self.item.url
+        return self['item'].url
+
+    def resolve_nextItem(self, info):
+        return self['nextItem']
 
     def resolve_position(self, info):
-        return self.position
+        return self['position']

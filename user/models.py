@@ -33,7 +33,7 @@ class User(AbstractUser):
     # file field with image/size validation, the user's avatar
     # will be publicly visible (even if user has set 'isProfilePrivate')
     avatar = MediaField(
-        storage=UserAvatarStorage,
+        storage=UserAvatarStorage(),
         max_size=1024 * 1024 * 5,
         content_types=[
             'image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp',
@@ -43,7 +43,7 @@ class User(AbstractUser):
     # file field with image/size validation, a cover image for the user's profile
     # will be publicly visible (even if user has set 'isProfilePrivate')
     cover = MediaField(
-        storage=UserCoverStorage,
+        storage=UserCoverStorage(),
         max_size=1024 * 1024 * 8,
         content_types=[
             'image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp',

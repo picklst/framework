@@ -1,6 +1,10 @@
 import graphene
 
 
+class ListQueryInput(graphene.InputObjectType):
+    username = graphene.String(required=True)
+
+
 class ListSelectInput(graphene.InputObjectType):
     slug = graphene.String()
     id = graphene.Int()

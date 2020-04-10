@@ -37,10 +37,18 @@ class List(models.Model):
         null=True,
         blank=True
     )
+
+    firstItem = models.ForeignKey(
+        'Item',
+        on_delete=models.SET_NULL,  # a list's topic is set to null, if the topic it belong is deleted
+        null=True,
+        blank=True,
+        related_name='first_item'
+    )
     # m2m relation to tags associated with this list
     hashTags = models.ManyToManyField(Tag, blank=True, db_table='list_tag')
     # m2m relations to items belonging to this list, referenced through the position table
-    items = models.ManyToManyField('Item', through='Position', related_name='item_lists')
+    items = models.ManyToManyField('Item', through='Position', through_fields=('list', 'item'), related_name='item_lists')
 
     # boolean, true when the listing is active, set to false when listing is taken down, user acc. deactivated etc.
     isActive = models.BooleanField(default=True)
@@ -181,16 +189,14 @@ class Item(models.Model):
 
 class Position(models.Model):
     # foreign key to the item whose position is being defined
-    item = models.OneToOneField(Item, on_delete=models.CASCADE, primary_key=True)
+    item = models.OneToOneField(Item, on_delete=models.CASCADE, primary_key=True, related_name='position_item')
     # foreign key to the list where the item belongs, and in which the position is to be defined
     # could have been accessed through item.list, but to avoid join and easy querying
     list = models.ForeignKey(List, on_delete=models.CASCADE)
-    # integer storing position of the item
-    # null maybe used when swapping etc.
-    position = models.PositiveSmallIntegerField(null=True)
+
+    next = models.ForeignKey(Item, on_delete=models.PROTECT, null=True, related_name='next_item')
 
     class Meta:
-        unique_together = [['list', 'position']]
         db_table = 'item_position'
         verbose_name_plural = "List-Item Positions"
         verbose_name = "List-Item Position"

@@ -1,5 +1,8 @@
 import graphene
 
+from framework.utils.graphql import APIException
+from list.models import List
+
 
 class ListPropertiesObj(graphene.ObjectType):
     isPrivate = graphene.Boolean()
@@ -21,14 +24,42 @@ class ListObj(graphene.ObjectType):
     name = graphene.String()
     slug = graphene.String()
     curator = graphene.Field(UserObj)
+    createdTimestamp = graphene.types.DateTime()
+    lastUpdateTimestamp = graphene.types.DateTime()
+
+    coverURL = graphene.String()
     description = graphene.String()
     properties = graphene.Field(ListPropertiesObj)
+
     tags = graphene.List(TagObj)
     items = graphene.List(PositionResolvedItemObj)
+
+    def resolve_coverURL(self, info):
+        if self.cover and hasattr(self.cover, 'url'):
+            return info.context.build_absolute_uri(self.cover.url)
+        return None
 
     def resolve_properties(self, info):
         return self
 
     def resolve_items(self, info):
         from list.models import Position
-        return Position.objects.filter(list=self).order_by('position')
+        try:
+            items = []
+            counter = 0
+            ItemPos = None
+            while ItemPos is None or ItemPos.next is not None:
+                if ItemPos is None:
+                    listObj = List.objects.get(slug=self.slug)
+                    ItemPos = Position.objects.get(list=self, item=listObj.firstItem)
+                else:
+                    ItemPos = Position.objects.get(list=self, item=ItemPos.next)
+                counter += 1
+                items.append({
+                    "position": counter,
+                    "item": ItemPos.item,
+                    "nextItem": ItemPos.next,
+                })
+            return items
+        except Position.DoesNotExist:
+            raise APIException('List item positions cannot be determined.', code='POSITION_CORRUPTED')
