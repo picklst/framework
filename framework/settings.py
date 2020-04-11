@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'media',
     'taxonomy',
     'user',
-    'list'
+    'list',
+    'log'
 ]
 
 MIDDLEWARE = [

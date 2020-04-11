@@ -11,7 +11,7 @@ from list.api.item.inputs import ItemInput
 from list.api.list.inputs import ListSelectInput
 from list.utils.mutations.list import exclude_position, insert_at_position, move_to_position, move_item_up, \
     move_item_down
-
+from log.models import ItemChangeLog
 
 ItemMoveDirectionEnum = graphene.Enum('Direction', [('up', 1), ('down', 0)])
 
@@ -39,6 +39,10 @@ class CreateItem(graphene.Mutation):
             for o in objects:
                 o.list = lists.first()
                 obj = create_item(o)
+                ItemChangeLog.objects.create(
+                    user=info.context.user,
+                    item=obj
+                )
                 insert_at_position(obj, o.position)
                 objs.append(obj)
             return objs
@@ -60,6 +64,10 @@ class UpdateItem(graphene.Mutation):
             for o in objects:
                 o.list = lists.first()
                 obj = update_item(o)
+                ItemChangeLog.objects.create(
+                    user=info.context.user,
+                    item=obj
+                )
                 move_to_position(obj, o.position)
                 objs.append(obj)
             return objs

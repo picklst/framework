@@ -2,6 +2,7 @@ import graphene
 
 from framework.utils.graphql import APIException
 from list.models import List
+from log.models import ListChangeLog
 
 
 class ListPropertiesObj(graphene.ObjectType):
@@ -41,6 +42,16 @@ class ListObj(graphene.ObjectType):
 
     def resolve_properties(self, info):
         return self
+
+    def resolve_createdTimestamp(self, info):
+        log = ListChangeLog.objects.filter(list=self).order_by('timestamp')
+        if log.first():
+            return log.first().timestamp
+
+    def resolve_lastUpdateTimestamp(self, info):
+        log = ListChangeLog.objects.filter(list=self).order_by('-timestamp')
+        if log.first():
+            return log.first().timestamp
 
     def resolve_items(self, info):
         from list.models import Position

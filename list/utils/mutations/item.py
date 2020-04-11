@@ -22,7 +22,7 @@ def create_item(o):
                 itemObj.hashTags.clear()
                 for t in o.tags:
                     tObj, cr = Tag.objects.get_or_create(
-                        name=t[1:]
+                        name=t[1:].lower()
                     )
                     itemObj.hashTags.add(tObj.id)
 
@@ -49,7 +49,7 @@ def update_item(o):
                     item.hashTags.clear()
                     for t in o.tags:
                         tObj, cr = Tag.objects.get_or_create(
-                            name=t[1:]
+                            name=t[1:].lower()
                         )
                         item.hashTags.add(tObj.id)
 
