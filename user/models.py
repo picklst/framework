@@ -80,6 +80,9 @@ class UserSubscription(models.Model):
         verbose_name = "User Subscription"
         verbose_name_plural = "User Subscriptions"
 
+    def __str__(self):
+        return self.id
+
 
 __all__ = [
     'User',

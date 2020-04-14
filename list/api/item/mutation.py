@@ -3,14 +3,14 @@ from django.db.models import Q
 from graphql_jwt.decorators import login_required
 
 from framework.utils.graphql import APIException
+from list.utils.decorators import user_can_edit_list
 from list.utils.mutations.item import create_item, delete_item, update_item
 from list.models import List, Item
 
 from list.api.item.objects import ItemObj
 from list.api.item.inputs import ItemInput
 from list.api.list.inputs import ListSelectInput
-from list.utils.mutations.list import exclude_position, insert_at_position, move_to_position, move_item_up, \
-    move_item_down
+from list.utils.mutations.list import exclude_position, insert_at_position, move_item_up, move_item_down
 from log.models import ItemChangeLog
 
 ItemMoveDirectionEnum = graphene.Enum('Direction', [('up', 1), ('down', 0)])
@@ -31,8 +31,8 @@ class CreateItem(graphene.Mutation):
     Output = CreateItemObject
 
     @login_required
+    @user_can_edit_list
     def mutate(self, info, list, objects):
-        print(list.slug)
         lists = List.objects.filter((Q(slug=list.slug) | Q(id=list.id)) & Q(isActive=True))
         if lists.count() == 1:
             objs = []
@@ -57,6 +57,7 @@ class UpdateItem(graphene.Mutation):
     Output = CreateItemObject
 
     @login_required
+    @user_can_edit_list
     def mutate(self, info, list, objects):
         lists = List.objects.filter((Q(slug=list.slug) | Q(id=list.id)) & Q(isActive=True))
         if lists.count() == 1:
@@ -68,7 +69,6 @@ class UpdateItem(graphene.Mutation):
                     user=info.context.user,
                     item=obj
                 )
-                move_to_position(obj, o.position)
                 objs.append(obj)
             return objs
         raise Exception(AttributeError, "Invalid list passed")
@@ -76,13 +76,15 @@ class UpdateItem(graphene.Mutation):
 
 class MoveItem(graphene.Mutation):
     class Arguments:
+        list = ListSelectInput()
         direction = ItemMoveDirectionEnum(required=True)
         key = graphene.String(required=True)
 
     Output = graphene.Boolean
 
     @login_required
-    def mutate(self, info, direction, key):
+    @user_can_edit_list
+    def mutate(self, info, list, direction, key):
         try:
             item = Item.objects.get(key=key)
             if direction == 1:
@@ -106,6 +108,7 @@ class DeleteItem(graphene.Mutation):
     Output = graphene.Boolean
 
     @login_required
+    @user_can_edit_list
     def mutate(self, info, list, keys):
         lists = List.objects.filter((Q(slug=list.slug) | Q(id=list.id)) & Q(isActive=True))
         if lists.count() == 1:

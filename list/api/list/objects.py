@@ -34,6 +34,7 @@ class ListObj(graphene.ObjectType):
 
     tags = graphene.List(TagObj)
     items = graphene.List(PositionResolvedItemObj)
+    itemCount = graphene.Int()
 
     def resolve_coverURL(self, info):
         if self.cover and hasattr(self.cover, 'url'):
@@ -74,3 +75,6 @@ class ListObj(graphene.ObjectType):
             return items
         except Position.DoesNotExist:
             raise APIException('List item positions cannot be determined.', code='POSITION_CORRUPTED')
+
+    def resolve_itemCount(self, info):
+        return len(self.items.all())

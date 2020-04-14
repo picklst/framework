@@ -13,7 +13,13 @@ class Media(models.Model):
     # unsigned INT64, auto incremented, Primary Key
     # always kept secret
     id = models.BigAutoField(primary_key=True)
-
+    # unique short-id for the media
+    # publicly exposed to uniquely identify an item
+    key = models.CharField(
+        max_length=63,
+        unique=True,
+        verbose_name='Key'
+    )
     # boolean, whether the media contains material
     isSensitive = models.BooleanField(default=False)
     # boolean, whether the media contains explicit material
@@ -25,6 +31,12 @@ class Media(models.Model):
     uploader = models.ForeignKey(User, verbose_name='Uploader', on_delete=models.CASCADE)
     # timestamp of upload
     timestamp = models.DateTimeField(auto_now=True)
+
+    # type of media
+    type = models.CharField(max_length=15, default='image')
+
+    # aspect ratio of media
+    aspect = models.DecimalField(decimal_places=2, max_digits=3, default=1)
 
     # the file, actual media asset
     asset = MediaField(

@@ -1,6 +1,7 @@
 import uuid
 
-from list.models import List, Item
+from list.models import List, Item, ItemMedia
+from media.models import Media
 from taxonomy.models import Tag
 
 
@@ -52,6 +53,16 @@ def update_item(o):
                             name=t[1:].lower()
                         )
                         item.hashTags.add(tObj.id)
+
+                if hasattr(o, "media") and o.media is not None:
+                    try:
+                        mediaObj = Media.objects.get(key=o.media)
+                        ItemMedia.objects.create(
+                            item=item,
+                            media=mediaObj
+                        )
+                    except Media.DoesNotExist:
+                        pass
 
                 if hasattr(o, "name") and o.name is not None:
                     item.name = o.name

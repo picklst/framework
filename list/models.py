@@ -40,7 +40,7 @@ class List(models.Model):
 
     firstItem = models.ForeignKey(
         'Item',
-        on_delete=models.SET_NULL,  # a list's topic is set to null, if the topic it belong is deleted
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='first_item'
@@ -150,7 +150,7 @@ class Item(models.Model):
         unique=True,
         verbose_name='Key'
     )
-    # @todo creator of item through seperate table mayb
+    # @todo creator of item through separate table maybe
     # foreign key to the list the item belongs to
     list = models.ForeignKey(
         List,
@@ -194,7 +194,7 @@ class Position(models.Model):
     # could have been accessed through item.list, but to avoid join and easy querying
     list = models.ForeignKey(List, on_delete=models.CASCADE)
 
-    next = models.ForeignKey(Item, on_delete=models.PROTECT, null=True, related_name='next_item')
+    next = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, related_name='next_item')
 
     class Meta:
         db_table = 'item_position'
