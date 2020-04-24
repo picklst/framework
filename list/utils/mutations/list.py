@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.template.defaultfilters import slugify
 
-from framework.utils.graphql import APIException
+from framework.graphql.utils import APIException
 from list.utils.mutations.item import create_item, update_item, delete_item
 from list.models import List, Position
 from user.models import User

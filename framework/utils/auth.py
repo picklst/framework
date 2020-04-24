@@ -19,12 +19,12 @@ class AuthEmailBackend:
 
 
 def generate_unique_username(username):
-    generatedUsername = username + ''.join([choice(string.digits) for i in range(3)])
     try:
-        User.objects.get(username=generatedUsername)
-        return generate_unique_username(username)
+        User.objects.get(username=username)
+        generatedUsername = username + ''.join([choice(string.digits) for i in range(3)])
+        return generate_unique_username(generatedUsername)
     except User.DoesNotExist:
-        return generatedUsername
+        return username
 
 
 def generate_username_from_email(email):
@@ -32,7 +32,7 @@ def generate_username_from_email(email):
         emailUsername = email.split('@')[0]
         return generate_unique_username(emailUsername)
     except IndexError:
-        return None
+        raise Exception("Invalid Email")
 
 
 def generate_password():

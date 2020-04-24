@@ -1,6 +1,6 @@
 from graphql.execution.base import ResolveInfo
 
-from framework.utils.graphql import APIException
+from framework.graphql.utils import APIException
 from list.models import List, Collaborator
 
 

@@ -3,13 +3,18 @@ from django.contrib.auth.models import AbstractUser
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils import timezone
+from graphql_jwt.refresh_token.models import RefreshToken
 from graphql_jwt.signals import token_issued
 
+from framework.utils.cornflakes.decorators import model_config
+from framework.utils.cornflakes.fields import ShadedIDField
 from media.fields import MediaField
 from media.storages import UserAvatarStorage, UserCoverStorage
 
 
+@model_config()
 class User(AbstractUser):
+    id = ShadedIDField(primary_key=True, null=False)
     # email to communicate with the user
     email = models.EmailField(unique=True, null=False, blank=False)
 
@@ -69,7 +74,9 @@ def submission_delete(sender, instance, **kwargs):
     instance.avatar.delete(save=False)
 
 
+@model_config()
 class UserSubscription(models.Model):
+    id = ShadedIDField(primary_key=True, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='User', related_name='user')
     subscriber = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Subscriber', related_name='follower')
     createdTimestamp = models.DateTimeField(auto_now=True)
@@ -81,10 +88,29 @@ class UserSubscription(models.Model):
         verbose_name_plural = "User Subscriptions"
 
     def __str__(self):
-        return self.id
+        return str(self.id)
+
+
+class UserSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    refreshToken = models.OneToOneField(RefreshToken, on_delete=models.CASCADE)
+    lastSeenTimestamp = models.DateTimeField(auto_now=True)
+    ipAddress = models.GenericIPAddressField(null=True, blank=True)
+    operatingSystem = models.CharField(max_length=63, null=False, blank=True, default='')
+    browser = models.CharField(max_length=63, null=False, blank=True, default='')
+    device = models.CharField(max_length=63, null=False, blank=True, default='')
+
+    class Meta:
+        db_table = 'user_session'
+        verbose_name = "User Session"
+        verbose_name_plural = "User Sessions"
+
+    def __str__(self):
+        return str(self.id)
 
 
 __all__ = [
     'User',
-    'UserSubscription'
+    'UserSubscription',
+    'UserSession'
 ]

@@ -3,16 +3,19 @@ from django.conf import settings
 from django.dispatch import receiver
 from django.db.models.signals import post_delete
 
+from framework.utils.cornflakes.decorators import model_config
+from framework.utils.cornflakes.fields import ShadedIDField
 from media.fields import MediaField
 from media.storages import UserMediaStorage
 
 User = settings.AUTH_USER_MODEL
 
 
+@model_config()
 class Media(models.Model):
     # unsigned INT64, auto incremented, Primary Key
     # always kept secret
-    id = models.BigAutoField(primary_key=True)
+    id = ShadedIDField(primary_key=True, null=False)
     # unique short-id for the media
     # publicly exposed to uniquely identify an item
     key = models.CharField(

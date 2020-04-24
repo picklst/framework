@@ -3,6 +3,8 @@ from django.conf import settings
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
+from framework.utils.cornflakes.decorators import model_config
+from framework.utils.cornflakes.fields import ShadedIDField
 from media.fields import MediaField
 from media.models import Media
 from media.storages import ListCoverStorage
@@ -11,10 +13,11 @@ from taxonomy.models import Topic, Tag
 User = settings.AUTH_USER_MODEL
 
 
+@model_config()
 class List(models.Model):
     # unsigned INT64, auto incremented, Primary Key
     # always kept secret
-    id = models.BigAutoField(primary_key=True)
+    id = ShadedIDField(primary_key=True, null=False)
 
     # varchar(127), unique, url-friendly slug for the list based on `name` or user's choice
     # publicly exposed to uniquely identify a list
@@ -138,18 +141,12 @@ class Collaborator(models.Model):
         return str(self.id)
 
 
+@model_config()
 class Item(models.Model):
     # unsigned INT64, auto incremented, Primary Key
     # always kept secret
-    id = models.BigAutoField(primary_key=True)
+    id = ShadedIDField(primary_key=True, null=False)
 
-    # unique short-id for the item
-    # publicly exposed to uniquely identify an item
-    key = models.CharField(
-        max_length=63,
-        unique=True,
-        verbose_name='Key'
-    )
     # @todo creator of item through separate table maybe
     # foreign key to the list the item belongs to
     list = models.ForeignKey(
@@ -205,10 +202,11 @@ class Position(models.Model):
         return self.item.key
 
 
+@model_config()
 class Vote(models.Model):
     # unsigned INT64, auto incremented, Primary Key
     # always kept secret
-    id = models.BigAutoField(primary_key=True)
+    id = ShadedIDField(primary_key=True, null=False)
     # foreign key to the item which is being voted for
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     # foreign key to the user who is voting
@@ -228,10 +226,11 @@ class Vote(models.Model):
         return str(self.id)
 
 
+@model_config()
 class Rating(models.Model):
     # unsigned INT64, auto incremented, Primary Key
     # always kept secret
-    id = models.BigAutoField(primary_key=True)
+    id = ShadedIDField(primary_key=True, null=False)
     # foreign key to the item which is being rated
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     # foreign key to the user who has given the rating
@@ -283,5 +282,6 @@ __all__ = [
     'Item',
     'Position',
     'Vote',
-    'Rating'
+    'Rating',
+    'ItemMedia'
 ]

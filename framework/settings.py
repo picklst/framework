@@ -15,10 +15,13 @@ SECRET_KEY = env.str('SECRET_KEY', default='@v(sr0a1eocvp9x=pndj(ff*ll_d2yn7e&t1
 # Sets whether debug mode is activated. If true, errors logs are publicly visible instead of error pages
 DEBUG = env.bool('DEBUG', default=True)
 # Lists the hosts where the app is allowed to run. Set to '*' (any) on default
-# ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 FORCE_SCRIPT_NAME = '/api'
+
+DJANGO_TRUSTED_ORIGINS = ['http://localhost']
+
+SHARD_EPOCH = 1314220021721
 
 # Application definition
 INSTALLED_APPS = [
@@ -35,12 +38,14 @@ INSTALLED_APPS = [
     'graphql_jwt.refresh_token.apps.RefreshTokenConfig',
 
     # functionality apps
+    'framework.graphql',
     'media',
     'taxonomy',
     'user',
     'list',
     'log'
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -77,26 +82,16 @@ WSGI_APPLICATION = 'framework.wsgi.application'
 #
 # DATABASE SETTINGS
 #
-# whether to use postgres db, as set in environment
-if env.bool('USE_PGDB', default=False):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': env.str('POSTGRES_DB'),
-            'USER': env.str('POSTGRES_USER'),
-            'PASSWORD': env.str('POSTGRES_PASSWORD'),
-            'HOST': env.str('POSTGRES_HOST'),
-            'PORT': '5432',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': env.str('POSTGRES_DB'),
+        'USER': env.str('POSTGRES_USER'),
+        'PASSWORD': env.str('POSTGRES_PASSWORD'),
+        'HOST': env.str('POSTGRES_HOST'),
+        'PORT': '5432',
     }
-# uses simple sqlite3 database
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        }
-    }
+}
 
 
 # Static & Media Files Settings
@@ -165,19 +160,24 @@ USE_TZ = True
 # GraphQL Settings
 #
 GRAPHENE = {
-    'SCHEMA': 'framework.schema.schema',
+    'SCHEMA': 'framework.graphql.schema.schema',
     'MIDDLEWARE': [
         'graphql_jwt.middleware.JSONWebTokenMiddleware',
     ],
 }
 
 GRAPHQL_JWT = {
-    'JWT_ALLOW_ARGUMENT': True,
+    'JWT_ALGORITHM':  'HS512',
+    'JWT_ALLOW_ARGUMENT': False,
     'JWT_VERIFY_EXPIRATION': True,
     'JWT_USER_LOGGED_IN_SIGNAL': True,
     'JWT_LONG_RUNNING_REFRESH_TOKEN': True,
-    'JWT_EXPIRATION_DELTA': timedelta(days=7),
+    'JWT_EXPIRATION_DELTA': timedelta(minutes=1),
     'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=7),
+    'JWT_REUSE_REFRESH_TOKENS':  True,
+    'JWT_HIDE_TOKEN_FIELDS': True,
+    'JWT_COOKIE_NAME': 'JWTAccessToken',
+    'JWT_REFRESH_TOKEN_COOKIE_NAME': 'JWTRefreshToken',
 }
 
 
