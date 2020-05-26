@@ -17,3 +17,12 @@ def user_can_edit_list(func):
         raise APIException('You dont have permission to make changes to this list', code='PERMISSION_DENIED')
     return wrap
 
+
+def list_accepts_entries(func):
+    def wrap(*args, **kwargs):
+        slug = kwargs.get('list').get('slug')
+        listObj = List.objects.get(slug=slug)
+        if listObj.acceptEntries:
+            return func(*args, **kwargs)
+        raise APIException('You cannot make contributions to this list', code='ENTRIES_NOT_ACCEPTED')
+    return wrap

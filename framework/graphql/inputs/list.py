@@ -2,8 +2,8 @@ import graphene
 
 
 class ListSelectInput(graphene.InputObjectType):
-    username = graphene.String()
     slug = graphene.String()
+    id = graphene.Int()
 
 
 class ListPropertiesInput(graphene.InputObjectType):
@@ -18,15 +18,21 @@ class ListPropertiesInput(graphene.InputObjectType):
     acceptEntries = graphene.Boolean()
 
 
-class ListCreationInput(graphene.InputObjectType):
+class ListInput(graphene.InputObjectType):
     from .tag import TagInput
+
+    name = graphene.String()
+    description = graphene.String()
+    slug = graphene.String()
+    topic = graphene.String()
+    tags = graphene.List(TagInput)
+    properties = ListPropertiesInput()
+
+
+class ListCreationInput(ListInput):
     from .item import ItemInput
 
     name = graphene.String(required=True)
-    description = graphene.String()
-    slug = graphene.String()
-    tags = graphene.List(TagInput)
-    properties = ListPropertiesInput()
     items = graphene.List(ItemInput)
 
 

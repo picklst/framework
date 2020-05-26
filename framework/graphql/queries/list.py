@@ -1,28 +1,54 @@
 import graphene
+from django.db.models import Q
+from graphql_jwt.decorators import login_required
 
 from framework.graphql.utils import APIException
+from framework.utils.cursor_pagination import CursorPaginator
 from list.models import List
+from list.utils.decorators import user_can_edit_list
+from request.models import ListEntry
 from user.models import UserSubscription
 
-from framework.graphql.types import List as ListObj
-from framework.graphql.inputs import ListQueryInput
+from framework.graphql.types import List as ListObj, ListEntry as ListEntryObj
+from framework.graphql.inputs import ListQueryInput, ListSelectInput
+
+
+class ListQuery(graphene.ObjectType):
+    lists = graphene.List(ListObj)
+    hasNext = graphene.Boolean()
+    lastCursor = graphene.String()
+
+
+class ListEntryQuery(graphene.ObjectType):
+    entries = graphene.List(ListEntryObj)
+    totalCount = graphene.Int()
+    hasNext = graphene.Boolean()
+    lastCursor = graphene.String()
 
 
 class ListQueries(graphene.ObjectType):
-    list = graphene.Field(ListObj, slug=graphene.String(required=True), username=graphene.String(required=False))
-    lists = graphene.List(
+    list = graphene.Field(
         ListObj,
+        slug=graphene.String(required=True),
+        username=graphene.String(required=False)
+    )
+    lists = graphene.Field(
+        ListQuery,
         query=ListQueryInput(required=True),
-        limit=graphene.Int(),
-        offset=graphene.Int()
+        count=graphene.Int(),
+        after=graphene.String()
+    )
+    listEntries = graphene.Field(
+        ListEntryQuery,
+        list=ListSelectInput(required=True),
+        count=graphene.Int(),
+        after=graphene.String()
     )
 
     @staticmethod
-    def resolve_List(self, info, **kwargs):
-        slug = kwargs.get('slug')
-        username = kwargs.get('username')
+    def resolve_list(self, info, slug, username=None, **kwargs):
         try:
-            if username:
+            if username is not None:
                 listObj = List.objects.get(slug=slug, curator__username=username)
             else:
                 listObj = List.objects.get(slug=slug)
@@ -47,15 +73,37 @@ class ListQueries(graphene.ObjectType):
             raise APIException("The list queried does not exit", code='LIST_NOT_FOUND')
 
     @staticmethod
-    def resolve_lists(self, info, query, limit, offset, **kwargs):
-        if limit is None:
-            limit = 50
-        if offset is None:
-            offset = 0
+    def resolve_lists(self, info, query, count=10, after=None, **kwargs):
         if query and query.username is not None:
             username = query.username
         else:
             username = '*'
-        return List.objects.filter(
-            curator__username=username
-        )[offset:offset + limit]
+        qs = List.objects.filter(curator__username=username, isActive=True)
+        paginator = CursorPaginator(qs, ordering=('-timestampCreated', '-id'))
+        page = paginator.page(first=count, after=after)
+        return ListQuery(
+            lists=page,
+            hasNext=page.has_next,
+            lastCursor=paginator.cursor(page[-1]) if page else None
+        )
+
+    @login_required
+    @user_can_edit_list
+    def resolve_listEntries(self, info, list, count=10, after=None):
+        lists = List.objects.filter((Q(slug=list.slug) | Q(id=list.id)) & Q(isActive=True))
+        if lists.count() == 1:
+            qs = ListEntry.objects.filter(
+                position__isnull=True,
+                list=lists.first()
+            )
+            resultCount = qs.count()
+            paginator = CursorPaginator(qs, ordering=('-timestamp', '-id'))
+            page = paginator.page(first=count, after=after)
+            return ListEntryQuery(
+                entries=page,
+                totalCount=resultCount,
+                hasNext=page.has_next,
+                lastCursor=paginator.cursor(page[-1]) if page else None
+            )
+        else:
+            raise Exception(AttributeError, "Invalid list passed")

@@ -6,6 +6,7 @@ from .user import *
 
 __all__ = [
     'ItemInput',
+    'ListInput',
     'ListCreationInput',
     'ListSelectInput',
     'ListPropertiesInput',

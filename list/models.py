@@ -8,6 +8,7 @@ from framework.utils.cornflakes.fields import ShadedIDField
 from media.fields import MediaField
 from media.models import Media
 from media.storages import ListCoverStorage
+from poll.models import PollOption
 from taxonomy.models import Topic, Tag
 
 User = settings.AUTH_USER_MODEL
@@ -16,7 +17,6 @@ User = settings.AUTH_USER_MODEL
 @model_config()
 class List(models.Model):
     # unsigned INT64, auto incremented, Primary Key
-    # always kept secret
     id = ShadedIDField(primary_key=True, null=False)
 
     # varchar(127), unique, url-friendly slug for the list based on `name` or user's choice
@@ -97,13 +97,17 @@ class List(models.Model):
     )
     # cover image for the list
     cover = MediaField(
-        storage=ListCoverStorage,
+        storage=ListCoverStorage(),
         max_size=1024 * 1024 * 8,
         content_types=[
             'image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp',
         ],
         null=True, blank=True
     )
+
+    timestampCreated = models.DateTimeField(auto_now=True)
+
+    timestampLastEdited = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'list'
@@ -129,7 +133,7 @@ class Collaborator(models.Model):
     # foreign key to the user who is the collaborator of this list
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     # timestamp of when the user was added as collaborator
-    createdTimestamp = models.DateTimeField(auto_now=True)
+    timestampCreated = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = [['list', 'user']]
@@ -144,10 +148,9 @@ class Collaborator(models.Model):
 @model_config()
 class Item(models.Model):
     # unsigned INT64, auto incremented, Primary Key
-    # always kept secret
     id = ShadedIDField(primary_key=True, null=False)
 
-    # @todo creator of item through separate table maybe
+    # @todo creator of item through separate table maybe ??
     # foreign key to the list the item belongs to
     list = models.ForeignKey(
         List,
@@ -163,10 +166,29 @@ class Item(models.Model):
         blank=True,
         verbose_name='Source Item'
     )
+
+    # contributor of this item
+    contributor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='item_contributor'
+    )
+
     # m2m relation to tags associated with this item
     hashTags = models.ManyToManyField(Tag, db_table='item_tag', blank=True)
     # m2m relation to users mentioned in this item
     mentions = models.ManyToManyField(User, db_table='item_mention', blank=True)
+    # poll / question options
+    pollOptions = models.ManyToManyField(PollOption, blank=True, db_table='item_poll_option')
+    # correct option in case poll is used as a question / quiz
+    correctOption = models.ForeignKey(
+        PollOption,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='correct_option'
+    )
 
     # varchar(127), name of the listed item
     name = models.CharField(max_length=127, verbose_name='Name')
@@ -175,13 +197,17 @@ class Item(models.Model):
     # varchar(255), external url referenced in this item
     url = models.CharField(max_length=255, default='', blank=True, verbose_name='URL')
 
+    timestampCreated = models.DateTimeField(auto_now=True)
+
+    timestampLastEdited = models.DateTimeField(auto_now=True)
+
     class Meta:
         db_table = 'item'
         verbose_name_plural = "Items"
         verbose_name = "Item"
 
     def __str__(self):
-        return self.key
+        return str(self.id)
 
 
 class Position(models.Model):
@@ -199,13 +225,12 @@ class Position(models.Model):
         verbose_name = "List-Item Position"
 
     def __str__(self):
-        return self.item.key
+        return str(self.item)
 
 
 @model_config()
 class Vote(models.Model):
     # unsigned INT64, auto incremented, Primary Key
-    # always kept secret
     id = ShadedIDField(primary_key=True, null=False)
     # foreign key to the item which is being voted for
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
@@ -229,7 +254,6 @@ class Vote(models.Model):
 @model_config()
 class Rating(models.Model):
     # unsigned INT64, auto incremented, Primary Key
-    # always kept secret
     id = ShadedIDField(primary_key=True, null=False)
     # foreign key to the item which is being rated
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
@@ -245,6 +269,29 @@ class Rating(models.Model):
         db_table = 'item_rating'
         verbose_name_plural = "Item-User Ratings"
         verbose_name = "Item-User Rating"
+
+    def __str__(self):
+        return str(self.id)
+
+
+@model_config()
+class ListVote(models.Model):
+    # unsigned INT64, auto incremented, Primary Key
+    id = ShadedIDField(primary_key=True, null=False)
+    # foreign key to the user who is voting
+    voter = models.ForeignKey(User, on_delete=models.CASCADE)
+    # foreign key to the list whose items are being voted upon
+    list = models.ForeignKey(List, on_delete=models.CASCADE)
+    # foreign key to the item which has been voted for
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    # timestamp of the vote
+    timestamp = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [['list', 'voter']]
+        db_table = 'list_item_vote'
+        verbose_name_plural = "List Votes"
+        verbose_name = "List Vote"
 
     def __str__(self):
         return str(self.id)
@@ -273,7 +320,7 @@ class ItemMedia(models.Model):
 # now, when ItemMedia obj is deleted, the associated media can also be safely deleted.
 @receiver(post_delete, sender=ItemMedia)
 def submission_delete(sender, instance, **kwargs):
-    instance.media.delete(save=False)
+    instance.media.asset.delete(save=False)
 
 
 __all__ = [

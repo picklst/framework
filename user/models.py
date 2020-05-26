@@ -25,7 +25,8 @@ class User(AbstractUser):
     isProfilePrivate = models.BooleanField(default=False)
     # boolean, whether the account belongs to a business entity and should business features be enabled
     isBusinessProfile = models.BooleanField(default=False)
-
+    # boolean, whether email address is verified
+    isEmailVerified = models.BooleanField(default=False)
     # varchar(255), stores user's first name
     first_name = models.CharField(max_length=255, default='', blank=True, verbose_name='First Name')
     # varchar(255), stores user's last name
@@ -109,8 +110,24 @@ class UserSession(models.Model):
         return str(self.id)
 
 
+class UserInvite(models.Model):
+    email = models.EmailField()
+    referrer = models.EmailField(blank=True, null=True)
+    inviteSend = models.BooleanField(default=False)
+    createdTimestamp = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'user_invite'
+        verbose_name = "User Invite"
+        verbose_name_plural = "User Invites"
+
+    def __str__(self):
+        return str(self.id)
+
+
 __all__ = [
     'User',
     'UserSubscription',
-    'UserSession'
+    'UserSession',
+    'UserInvite'
 ]

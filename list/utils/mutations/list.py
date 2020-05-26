@@ -2,10 +2,13 @@ import uuid
 from datetime import datetime
 
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 
 from framework.graphql.utils import APIException
 from list.utils.mutations.item import create_item, update_item, delete_item
 from list.models import List, Position
+from media.models import Media
+from taxonomy.models import Topic
 from user.models import User
 
 
@@ -22,13 +25,13 @@ def exclude_position(item):
             listObj.firstItem = deletedItemPos.next
             listObj.save()
     except Position.DoesNotExist:
-        raise(AttributeError, 'Item position cannot be determined')
+        raise (AttributeError, 'Item position cannot be determined')
 
 
 def insert_at_position(i, pos):
     listObj = i.list
     if pos == 1:
-        Position.objects.create(
+        position = Position.objects.create(
             item=i,
             list=i.list,
             next=listObj.firstItem,
@@ -44,7 +47,7 @@ def insert_at_position(i, pos):
                 counter += 1
             prevPos = itemPos
             nextItem = itemPos.next
-            Position.objects.create(
+            position = Position.objects.create(
                 item=i,
                 list=i.list,
                 next=nextItem,
@@ -54,6 +57,7 @@ def insert_at_position(i, pos):
 
         except Position.DoesNotExist:
             raise APIException("Position of items of this list cannot be determined.", code='LIST_CORRUPTED')
+    return position
 
 
 def get_position(listObj, itemObj):
@@ -172,12 +176,20 @@ def create_list(o):
             slug=slug,
             curator=o.user,
         )
+
         if hasattr(o, "description") and o.description is not None:
             listObj.description = o.description
         # add list properties to the newly created obj, if provided
-        if o.properties:
+        if hasattr(o, "properties") and o.properties is not None:
             for p in o.properties.items():
                 setattr(listObj, p[0], p[1])
+
+        if hasattr(o, "topic") and o.topic is not None:
+            try:
+                topicObj = Topic.objects.get(slug=o.topic)
+                listObj.topic = topicObj
+            except Topic.DoesNotExist:
+                pass
 
         # save and write the obj to db
         listObj.save()
@@ -199,32 +211,45 @@ def create_list(o):
 def update_list(o):
     listObj = List.objects.get(slug=o.slug)
 
-    listObj.name = o.name
-    listObj.description = o.description
+    if hasattr(o, "name") and o.name is not None:
+        listObj.name = o.name
+    if hasattr(o, "description") and o.description is not None:
+        listObj.description = o.description
 
-    if o.properties:
+    if hasattr(o, "properties") and o.properties is not None:
         for p in o.properties.items():
             setattr(listObj, p[0], p[1])
 
-    if o.items:
-        items = []
-        updated_item_keys = []
-        for i in o.items:
-            i.list = listObj
-            if listObj.items.filter(key=i.key).exists():
-                itemUp = update_item(i)
-                updated_item_keys.append(i.key)
-                items.append((i.position, itemUp))
-            else:
-                itemCr = create_item(i)
-                updated_item_keys.append(i.key)
-                items.append((i.position, itemCr))
-        for i in listObj.items.exclude(key__in=updated_item_keys):
-            i.list = listObj
-            exclude_position(i)
-            delete_item(i.key)
-        firstItem = save_positions(items)
-        listObj.firstItem = firstItem
+    if hasattr(o, "topic") and o.topic is not None:
+        try:
+            topicObj = Topic.objects.get(slug=o.topic)
+            listObj.topic = topicObj
+        except Topic.DoesNotExist:
+            pass
 
+    try:
+        if hasattr(o, "items") and o.items is not None and len(o.items) > 0:
+            items = []
+            updated_item_keys = []
+            for i in o.items:
+                i.list = listObj
+                if listObj.items.filter(key=i.key).exists():
+                    itemUp = update_item(i)
+                    updated_item_keys.append(i.key)
+                    items.append((i.position, itemUp))
+                else:
+                    itemCr = create_item(i)
+                    updated_item_keys.append(i.key)
+                    items.append((i.position, itemCr))
+            for i in listObj.items.exclude(key__in=updated_item_keys):
+                i.list = listObj
+                exclude_position(i)
+                delete_item(i.key)
+            firstItem = save_positions(items)
+            listObj.firstItem = firstItem
+    except:
+        pass
+
+    listObj.timestampLastEdited = timezone.now()
     listObj.save()
     return listObj

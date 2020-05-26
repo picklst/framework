@@ -7,11 +7,22 @@ from .mutations import (
     ItemMutations,
     ListMutations,
     MediaMutations,
+    PollMutations,
+    RequestMutations,
+    ReportMutations,
+    TopicMutations,
     UserMutations,
 )
 from .queries import (
+    DiscoveryQueries,
+    FeedQueries,
+    LinkQueries,
     ListQueries,
-    UserQueries
+    NotificationQueries,
+    PollQueries,
+    TopicQueries,
+    SearchQueries,
+    UserQueries,
 )
 
 
@@ -21,13 +32,24 @@ class Mutation(
     ItemMutations,
     ListMutations,
     MediaMutations,
+    PollMutations,
+    RequestMutations,
+    ReportMutations,
+    TopicMutations,
     UserMutations,
 ):
     pass
 
 
 class Query(
+    DiscoveryQueries,
+    FeedQueries,
+    LinkQueries,
     ListQueries,
+    NotificationQueries,
+    PollQueries,
+    TopicQueries,
+    SearchQueries,
     UserQueries
 ):
     pass

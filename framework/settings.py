@@ -15,7 +15,8 @@ SECRET_KEY = env.str('SECRET_KEY', default='@v(sr0a1eocvp9x=pndj(ff*ll_d2yn7e&t1
 # Sets whether debug mode is activated. If true, errors logs are publicly visible instead of error pages
 DEBUG = env.bool('DEBUG', default=True)
 # Lists the hosts where the app is allowed to run. Set to '*' (any) on default
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+ALLOWED_HOSTS = ['*']
+#env.list('ALLOWED_HOSTS', default=['*'])
 
 FORCE_SCRIPT_NAME = '/api'
 
@@ -43,7 +44,11 @@ INSTALLED_APPS = [
     'taxonomy',
     'user',
     'list',
-    'log'
+    'link',
+    'log',
+    'poll',
+    'request',
+    'curation'
 ]
 
 
@@ -110,14 +115,6 @@ if env.bool('USE_S3', default=False):
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
     STATICFILES_STORAGE = 'framework.utils.storage.StaticStorage'
 
-    # # Public Media
-    # PUBLIC_MEDIA_LOCATION = 'media/public'
-    # MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
-    # DEFAULT_FILE_STORAGE = 'framework.helpers.storage.PublicMediaStorage'
-    #
-    # # User Media
-    # USER_MEDIA_LOCATION = 'media/user'
-    # USER_FILE_STORAGE = 'framework.helpers.storage.UserMediaStorage'
 else:
     STATIC_ROOT = ''
     STATIC_URL = '/static/'
@@ -172,7 +169,7 @@ GRAPHQL_JWT = {
     'JWT_VERIFY_EXPIRATION': True,
     'JWT_USER_LOGGED_IN_SIGNAL': True,
     'JWT_LONG_RUNNING_REFRESH_TOKEN': True,
-    'JWT_EXPIRATION_DELTA': timedelta(minutes=1),
+    'JWT_EXPIRATION_DELTA': timedelta(minutes=15),
     'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=7),
     'JWT_REUSE_REFRESH_TOKENS':  True,
     'JWT_HIDE_TOKEN_FIELDS': True,

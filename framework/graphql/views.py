@@ -34,6 +34,7 @@ class GraphQLView(BaseGraphQLView):
             refreshToken = request.COOKIES["JWTRefreshToken"]
             try:
                 rt = RefreshToken.objects.get(token=refreshToken)
+
                 try:
                     session = UserSession.objects.get(refreshToken=rt)
                 except UserSession.DoesNotExist:

@@ -1,0 +1,18 @@
+[
+  {
+      "type": "FOLLOWED_USER",
+      "phrase": "started following you"
+  },
+  {
+      "type": "LIST_REQUEST",
+      "phrase": "has requested a list"
+  },
+  {
+      "type": "LIKED_LIST",
+      "phrase": "has liked your list"
+  },
+  {
+    "type": "MENTION_IN_LIST",
+    "phrase": "mentioned you in a list"
+  }
+]

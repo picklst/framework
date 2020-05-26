@@ -1,7 +1,5 @@
 from django.db import models
 from django.conf import settings
-from django.dispatch import receiver
-from django.db.models.signals import post_delete
 
 from framework.utils.cornflakes.decorators import model_config
 from framework.utils.cornflakes.fields import ShadedIDField
@@ -14,15 +12,7 @@ User = settings.AUTH_USER_MODEL
 @model_config()
 class Media(models.Model):
     # unsigned INT64, auto incremented, Primary Key
-    # always kept secret
     id = ShadedIDField(primary_key=True, null=False)
-    # unique short-id for the media
-    # publicly exposed to uniquely identify an item
-    key = models.CharField(
-        max_length=63,
-        unique=True,
-        verbose_name='Key'
-    )
     # boolean, whether the media contains material
     isSensitive = models.BooleanField(default=False)
     # boolean, whether the media contains explicit material
@@ -58,13 +48,13 @@ class Media(models.Model):
         verbose_name = "Media"
 
     def __str__(self):
-        return str(id)
+        return str(self.id)
 
 
-# deletes the media from storage if Media object is deleted
-@receiver(post_delete, sender=Media)
-def submission_delete(sender, instance, **kwargs):
-    instance.asset.delete(save=False)
+# # deletes the media from storage if Media object is deleted
+# @receiver(post_delete, sender=Media)
+# def submission_delete(sender, instance, **kwargs):
+#     instance.asset.delete(save=False)
 
 
 __all__ = [

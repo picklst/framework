@@ -20,10 +20,7 @@ class UserStats(graphene.ObjectType):
         return UserSubscription.objects.filter(subscriber=self).count()
 
 
-class User(
-    graphene.ObjectType,
-    description='Represents profile information of an user account'
-):
+class Profile(graphene.ObjectType):
     username = graphene.String()
     firstName = graphene.String()
     lastName = graphene.String()
@@ -50,8 +47,8 @@ class User(
 
     # protected fields
     email = graphene.String()
-    followers = graphene.List(lambda: User, limit=graphene.Int(), offset=graphene.Int())
-    following = graphene.List(lambda: User, limit=graphene.Int(), offset=graphene.Int())
+    followers = graphene.List(lambda: Profile, limit=graphene.Int(), offset=graphene.Int())
+    following = graphene.List(lambda: Profile, limit=graphene.Int(), offset=graphene.Int())
 
     def resolve_firstName(self, info):
         return self.first_name

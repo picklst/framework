@@ -2,12 +2,12 @@ import graphene
 from django.db.models import Q
 from graphql_jwt.decorators import login_required
 
-from list.models import List, Item
+from list.models import List, Item, Vote
 from log.models import ItemChangeLog
 
 from list.utils.mutations.item import create_item, update_item, delete_item
 from list.utils.mutations.list import insert_at_position, move_item_up, move_item_down, exclude_position
-from list.utils.decorators import user_can_edit_list
+from list.utils.decorators import user_can_edit_list, list_accepts_entries
 
 from framework.graphql.utils import APIException
 from framework.graphql.inputs import ItemInput, ListSelectInput
@@ -15,8 +15,7 @@ from framework.graphql.inputs import ItemInput, ListSelectInput
 
 class ItemMutationResponse(graphene.ObjectType):
     from framework.graphql.types import Item as ItemObj
-
-    returning = graphene.List(ItemObj)
+    returning = graphene.Field(ItemObj)
 
     def resolve_returning(self, info):
         return self
@@ -25,67 +24,65 @@ class ItemMutationResponse(graphene.ObjectType):
 class ItemCreate(graphene.Mutation):
     class Arguments:
         list = ListSelectInput()
-        objects = graphene.List(ItemInput)
+        object = graphene.Argument(ItemInput, required=True)
 
     Output = ItemMutationResponse
 
     @login_required
     @user_can_edit_list
-    def mutate(self, info, list, objects):
+    def mutate(self, info, list, object):
         lists = List.objects.filter((Q(slug=list.slug) | Q(id=list.id)) & Q(isActive=True))
         if lists.count() == 1:
-            objs = []
-            for o in objects:
-                o.list = lists.first()
-                obj = create_item(o)
-                ItemChangeLog.objects.create(
-                    user=info.context.user,
-                    item=obj
-                )
-                insert_at_position(obj, o.position)
-                objs.append(obj)
-            return objs
-        raise Exception(AttributeError, "Invalid list passed")
+            object.list = lists.first()
+            obj = create_item(object)
+            ItemChangeLog.objects.create(
+                user=info.context.user,
+                item=obj
+            )
+            insert_at_position(obj, object.position)
+            return obj
+        else:
+            raise Exception(AttributeError, "Invalid list passed")
 
 
 class ItemUpdate(graphene.Mutation):
     class Arguments:
         list = ListSelectInput()
-        objects = graphene.List(ItemInput)
+        id = graphene.String(required=True)
+        object = graphene.Argument(ItemInput, required=True)
 
     Output = ItemMutationResponse
 
     @login_required
     @user_can_edit_list
-    def mutate(self, info, list, objects):
+    def mutate(self, info, list, id, object):
         lists = List.objects.filter((Q(slug=list.slug) | Q(id=list.id)) & Q(isActive=True))
         if lists.count() == 1:
-            objs = []
-            for o in objects:
-                o.list = lists.first()
-                obj = update_item(o)
-                ItemChangeLog.objects.create(
-                    user=info.context.user,
-                    item=obj
-                )
-                objs.append(obj)
-            return objs
-        raise Exception(AttributeError, "Invalid list passed")
+            object.list = lists.first()
+            object.id = id
+            obj = update_item(object)
+            ItemChangeLog.objects.create(
+                user=info.context.user,
+                item=obj
+            )
+            return obj
+        else:
+            raise Exception(AttributeError, "Invalid list passed")
 
 
 class ItemMove(graphene.Mutation):
     class Arguments:
         list = ListSelectInput()
         direction = graphene.Argument(graphene.Enum('Direction', [('up', 1), ('down', 0)]))
-        key = graphene.String(required=True)
+        id = graphene.String(required=True)
 
     Output = graphene.Boolean
 
     @login_required
     @user_can_edit_list
-    def mutate(self, info, list, direction, key):
+    def mutate(self, info, list, direction, id):
         try:
-            item = Item.objects.get(key=key)
+            item = Item.objects.get(id=id)
             if direction == 1:
                 return move_item_up(item)
             elif direction == 0:
@@ -102,21 +99,76 @@ class ItemMove(graphene.Mutation):
 class ItemDelete(graphene.Mutation):
     class Arguments:
         list = ListSelectInput()
-        keys = graphene.List(graphene.String)
+        id = graphene.String(required=True)
 
     Output = graphene.Boolean
 
     @login_required
     @user_can_edit_list
-    def mutate(self, info, list, keys):
+    def mutate(self, info, list, id):
         lists = List.objects.filter((Q(slug=list.slug) | Q(id=list.id)) & Q(isActive=True))
         if lists.count() == 1:
-            for k in keys:
-                itemObj = Item.objects.get(key=k)
-                exclude_position(itemObj)
-                delete_item(k)
+            itemObj = Item.objects.get(id=id)
+            exclude_position(itemObj)
+            delete_item(id)
             return True
-        raise Exception(AttributeError, "Invalid list passed")
+        else:
+            raise Exception(AttributeError, "Invalid list passed")
+
+
+class ItemVote(graphene.Mutation):
+    class Arguments:
+        id = graphene.String(required=True)
+        isNegative = graphene.Boolean()
+
+    Output = graphene.Boolean
+
+    @login_required
+    def mutate(self, info, id, isNegative):
+        try:
+            itemObj = Item.objects.get(id=id)
+            try:
+                vote = Vote.objects.get(
+                    item=itemObj,
+                    voter=info.context.user
+                )
+                if vote.isNegative == isNegative:
+                    return True
+                else:
+                    vote.isNegative = isNegative
+                    vote.save()
+                    return True
+            except Vote.DoesNotExist:
+                Vote.objects.create(
+                    item=itemObj,
+                    voter=info.context.user,
+                    isNegative=isNegative
+                )
+                return True
+        except Item.DoesNotExist:
+            raise APIException('Item does not exist', code='ITEM_DOES_NOT_EXIST')
+
+
+class ItemUnvote(graphene.Mutation):
+    class Arguments:
+        id = graphene.String(required=True)
+
+    Output = graphene.Boolean
+
+    @login_required
+    def mutate(self, info, id):
+        try:
+            itemObj = Item.objects.get(id=id)
+            try:
+                Vote.objects.get(
+                    item=itemObj,
+                    voter=info.context.user
+                ).delete()
+                return True
+            except Vote.DoesNotExist:
+                raise APIException('Vote does not exist', code='VOTE_DOES_NOT_EXIST')
+        except Item.DoesNotExist:
+            raise APIException('Item does not exist', code='ITEM_DOES_NOT_EXIST')
 
 
 class ItemMutations(object):
@@ -124,3 +176,5 @@ class ItemMutations(object):
     itemUpdate = ItemUpdate.Field()
     itemMove = ItemMove.Field()
     itemDelete = ItemDelete.Field()
+    itemVote = ItemVote.Field()
+    itemUnvote = ItemUnvote.Field()

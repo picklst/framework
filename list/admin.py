@@ -1,5 +1,5 @@
 from django.contrib import admin
-from list.models import List, Collaborator, Item, Position, Vote, Rating
+from list.models import List, Collaborator, Item, Position, Vote, Rating, ItemMedia
 
 
 @admin.register(List)
@@ -14,6 +14,7 @@ class CollaboratorAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
+
     pass
 
 
@@ -27,6 +28,11 @@ class PositionAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(ItemMedia)
+class ItemMediaAdmin(admin.ModelAdmin):
+    pass
+
+
 @admin.register(Rating)
-class PositionAdmin(admin.ModelAdmin):
+class RatingAdmin(admin.ModelAdmin):
     pass

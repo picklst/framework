@@ -3,11 +3,10 @@ from django.db.models import Q
 from graphql_jwt.decorators import login_required
 
 from framework.graphql.inputs.user import UserCreationInput, UserUpdationInput
-from framework.graphql.types import User as UserObj
+from framework.graphql.types import Profile as UserType
 from framework.graphql.utils import APIException
 from framework.utils.auth import generate_username_from_email, generate_password
-
-from user.models import User, UserSubscription
+from user.models import UserSubscription, UserInvite, User
 
 
 class AccountCreationResponse(
@@ -15,7 +14,7 @@ class AccountCreationResponse(
     description='Response received on account creation mutation'
 ):
     returning = graphene.Field(
-        UserObj,
+        UserType,
         description='User fields to be returned'
     )
     generatedPassword = graphene.String(
@@ -28,7 +27,7 @@ class AccountUpdationResponse(
     description='Response received on account updation mutation'
 ):
     returning = graphene.Field(
-        UserObj,
+        UserType,
         description='User fields to be returned'
     )
 
@@ -47,18 +46,18 @@ class AccountCreate(
     Output = AccountCreationResponse
 
     @staticmethod
-    def mutate(info, input=None):
+    def mutate(self, info, input):
         try:
             user = User.objects.get(Q(username=input.username) | Q(email=input.email))
             if user.username == input.username:
                 raise APIException('Username already taken.', code='USERNAME_TAKEN')
             raise APIException('An account with this email already exist.', code='EMAIL_IN_USE')
         except User.DoesNotExist:
-            username = input.username | generate_username_from_email(input.email)
-            password = input.password | generate_password()
+            username = input.username if input.username is not None else generate_username_from_email(input.email)
+            password = input.password if input.password is not None else generate_password()
             user = User.objects.create(
-                first_name=input.firstName | username,
-                last_name=input.lastName | '',
+                first_name=input.firstName if input.firstName is not None else username,
+                last_name=input.lastName if input.lastName is not None else '',
                 email=input.email,
                 username=username,
             )
@@ -67,7 +66,6 @@ class AccountCreate(
             return AccountCreationResponse(
                 returning=user,
                 generatedPassword=password if input.password is None else None,
-                status=True
             )
 
 
@@ -107,6 +105,22 @@ class AccountUpdate(
             raise APIException('User matching email does not exist', code='DOES_NOT_EXIST')
 
 
+class AccountMediaUpload(graphene.Mutation):
+    Output = graphene.Boolean
+
+    @login_required
+    def mutate(self, info):
+        user = info.context.user
+        if info.context.FILES is not None:
+            if 'userAvatar' in info.context.FILES:
+                user.avatar = info.context.FILES['userAvatar']
+            if 'userCover' in info.context.FILES:
+                user.cover = info.context.FILES['userCover']
+            user.save()
+        else:
+            raise APIException("File not attached", code="FILE_NOT_ATTACHED")
+
+
 class FollowUser(graphene.Mutation):
     class Arguments:
         username = graphene.String(required=True)
@@ -122,6 +136,8 @@ class FollowUser(graphene.Mutation):
         else:
             try:
                 user = User.objects.get(username=username)
+                if user.isProfilePrivate:
+                    raise APIException('User profile is private, request for following.', code='PRIVATE_PROFILE')
                 UserSubscription.objects.create(
                     user=user,
                     subscriber=info.context.user
@@ -149,11 +165,49 @@ class UnfollowUser(graphene.Mutation):
             raise APIException('User is not being followed.', code='NOT_FOLLOWING_USER')
 
 
+class InviteRequestResponse(graphene.ObjectType):
+    isWaitlisted = graphene.Boolean()
+    tokenNo = graphene.Int()
+
+
+class InviteRequest(graphene.Mutation):
+    class Arguments:
+        email = graphene.String(required=True)
+        referrer = graphene.String(required=False)
+
+    Output = InviteRequestResponse
+
+    @staticmethod
+    def mutate(self, info, email, referrer=None):
+        try:
+            User.objects.get(email=email)
+            raise APIException(
+                'Account with this email already exists. Please log in to your account.',
+                code='ACCOUNT_EXISTS'
+            )
+        except User.DoesNotExist:
+            try:
+                invite = UserInvite.objects.get(email=email)
+            except UserInvite.DoesNotExist:
+                invite = UserInvite.objects.create(email=email, referrer=referrer)
+            tokenNo = UserInvite.objects.filter(
+                inviteSend=False, createdTimestamp__lte=invite.createdTimestamp
+            ).order_by('id').count()
+            return InviteRequestResponse(
+                isWaitlisted=not invite.inviteSend,
+                tokenNo=tokenNo if not invite.inviteSend else 0,
+            )
+
+
 class UserMutations(graphene.ObjectType):
     accountCreate = AccountCreate.Field()
     accountUpdate = AccountUpdate.Field()
+    accountMediaUpload = AccountMediaUpload.Field()
     followUser = FollowUser.Field()
     unfollowUser = UnfollowUser.Field()
+    inviteRequest = InviteRequest.Field()
 
 
-__all__ = ['UserMutations']
+__all__ = [
+    'UserMutations'
+]

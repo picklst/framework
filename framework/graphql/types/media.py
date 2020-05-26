@@ -2,7 +2,7 @@ import graphene
 
 
 class Media(graphene.ObjectType):
-    key = graphene.String()
+    id = graphene.String()
     type = graphene.String()
     aspect = graphene.Decimal()
     url = graphene.String()
