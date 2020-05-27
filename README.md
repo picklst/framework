@@ -1,4 +1,4 @@
-# Framework
+# Picklst Framework
 The django server that powers the core functionality of picklst.
 
 ### Setting Up for Development
