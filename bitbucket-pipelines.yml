@@ -17,3 +17,7 @@ pipelines:
             - eval $(aws ecr get-login --no-include-email --region ap-south-1 | sed 's|https://||')
             - docker build -t $IMAGE:$TAG .
             - docker push $IMAGE:$TAG
+definitions:
+  services:
+    docker:
+      memory: 2048
