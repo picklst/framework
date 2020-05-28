@@ -15,12 +15,11 @@ SECRET_KEY = env.str('SECRET_KEY', default='@v(sr0a1eocvp9x=pndj(ff*ll_d2yn7e&t1
 # Sets whether debug mode is activated. If true, errors logs are publicly visible instead of error pages
 DEBUG = env.bool('DEBUG', default=True)
 # Lists the hosts where the app is allowed to run. Set to '*' (any) on default
-ALLOWED_HOSTS = ['*']
-#env.list('ALLOWED_HOSTS', default=['*'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 FORCE_SCRIPT_NAME = '/api'
 
-DJANGO_TRUSTED_ORIGINS = ['http://localhost']
+DJANGO_TRUSTED_ORIGINS = env.list('DJANGO_TRUSTED_ORIGINS', ['http://localhost'])
 
 SHARD_EPOCH = 1314220021721
 
@@ -98,27 +97,19 @@ DATABASES = {
     }
 }
 
+AWS_ACCESS_KEY_ID = env.str('S3_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env.str('S3_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env.str('S3_STORAGE_BUCKET_NAME')
+AWS_DEFAULT_ACL = None
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+AWS_S3_REGION_NAME = 'ap-south-1'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
 
-# Static & Media Files Settings
-if env.bool('USE_S3', default=False):
-    AWS_ACCESS_KEY_ID = env.str('S3_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = env.str('S3_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = env.str('S3_STORAGE_BUCKET_NAME')
-    AWS_DEFAULT_ACL = None
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
-    AWS_S3_REGION_NAME = 'ap-south-1'
-    AWS_S3_SIGNATURE_VERSION = 's3v4'
-
-    # Static Files
-    STATIC_LOCATION = 'static'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
-    STATICFILES_STORAGE = 'framework.utils.storage.StaticStorage'
-
-else:
-    STATIC_ROOT = ''
-    STATIC_URL = '/static/'
-    MEDIA_URL = '/'
+# Static Files
+STATIC_LOCATION = 'static'
+STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+STATICFILES_STORAGE = 'framework.utils.storage.StaticStorage'
 
 # List of static file directories
 STATICFILES_DIRS = (os.path.join('static'),)

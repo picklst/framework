@@ -6,9 +6,15 @@ from django.views.decorators.csrf import csrf_exempt
 from framework.graphql.views import GraphQLPlaygroundView, GraphQLView
 from framework.views import HealthCheckView
 
+from django.conf import settings
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('graphql/', csrf_exempt(jwt_cookie(GraphQLView.as_view(graphiql=True)))),
-    path('playground/', GraphQLPlaygroundView.as_view(endpoint="/api/graphql/")),
+    path('graphql/', csrf_exempt(jwt_cookie(GraphQLView.as_view(graphiql=settings.DEBUG)))),
     path('healthz/', HealthCheckView.as_view())
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path('admin/', admin.site.urls),
+        path('playground/', GraphQLPlaygroundView.as_view(endpoint="/api/graphql/")),
+    ]
