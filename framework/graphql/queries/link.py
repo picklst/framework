@@ -16,17 +16,12 @@ class LinkQueries(graphene.ObjectType):
     def resolve_link(self, info, url):
         fetchURL = urlparse(url).geturl()
         try:
-            link = Link.objects.get(url='https://abc.com')
-            return LinkObj(
-                url=url,
-                title=link.title,
-                description=link.description,
-                image=link.image
-            )
+            link = Link.objects.get(url=url)
+            return link
         except Link.DoesNotExist:
             response = fetch_url_meta(fetchURL)
             if response is not None:
-                link = Link(
+                link = Link.objects.create(
                     url=url,
                     title=response['title'],
                     description=response['description'],
